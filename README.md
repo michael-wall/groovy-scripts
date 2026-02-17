@@ -1,1 +1,1 @@
-# groovy-scripts
+See the individual folders for the README.

@@ -1,0 +1,95 @@
+import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
+import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalServiceUtil;
+import com.liferay.portal.kernel.service.ClassNameLocalServiceUtil;
+import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.model.ClassName;
+import com.liferay.portal.kernel.model.Layout;
+import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
+import com.liferay.portal.kernel.model.LayoutConstants;
+import com.liferay.layout.page.template.constants.LayoutPageTemplateEntryTypeConstants;
+import java.util.List;
+
+long groupId = 32482;
+//String masterPageTemplateKey = "mw-master";
+String masterPageTemplateKey = "test-master";
+//String masterPageTemplateKey = "hello-master";
+
+boolean privateLayout = false;
+String[] types = [LayoutConstants.TYPE_CONTENT] as String[]
+
+int updatedLayoutCount = 0;
+int skippedLayoutCount = 0;
+int updatedLayoutByClassPKCount = 0;
+int skippedLayoutByClassPKCount = 0;
+
+Group group = GroupLocalServiceUtil.fetchGroup(groupId);
+
+if (group == null) {
+	out.println("Group not found...");
+
+	return;
+}
+
+ClassName layoutClassName = ClassNameLocalServiceUtil.fetchClassName(Layout.class.getCanonicalName());
+
+if (layoutClassName == null) {
+	out.println("ClassName for Layout not found...");
+
+	return;
+}
+
+out.println("layoutClassNameId: " + layoutClassName.getClassNameId());
+
+LayoutPageTemplateEntry masterPageTemplate = LayoutPageTemplateEntryLocalServiceUtil.fetchLayoutPageTemplateEntry(groupId, masterPageTemplateKey);
+
+if (masterPageTemplate == null) {
+	out.println("Master Page Template not found...");
+
+	return;
+}
+
+long masterLayoutPlid = masterPageTemplate.getPlid();
+
+out.println("masterLayoutPlid: " + masterLayoutPlid);
+
+//int layoutCount = LayoutLocalServiceUtil.getLayoutsCount(group, privateLayout, "", types);
+//out.println("Site layout count: " + layoutCount);
+
+List layouts = LayoutLocalServiceUtil.getLayouts(groupId, privateLayout, LayoutConstants.TYPE_CONTENT);
+
+out.println("Site layout count: " + layouts.size());
+
+for (Layout layout: layouts) {
+	if (layout.getMasterLayoutPlid() != masterLayoutPlid) {
+		LayoutLocalServiceUtil.updateMasterLayoutPlid(groupId, privateLayout, layout.getLayoutId(), masterLayoutPlid);
+		updatedLayoutCount ++;
+		
+		out.println("Updated layout: " + layout.getLayoutId() + " " + layout.getFriendlyURL() + " draft: " + layout.isDraft());	
+	} else {
+		out.println("Layout: " + layout.getLayoutId() + " " + layout.getFriendlyURL() + " draft: " + layout.isDraft() + " already using the Master Page Template.");
+	
+		skippedLayoutCount ++;
+	}
+	
+	Layout layoutByClassPK = LayoutLocalServiceUtil.fetchLayout(layoutClassName.getClassNameId(), layout.getPlid());
+
+	if (layoutByClassPK != null) {
+		if (layoutByClassPK.getMasterLayoutPlid() != masterLayoutPlid) {
+			LayoutLocalServiceUtil.updateMasterLayoutPlid(groupId, privateLayout, layoutByClassPK.getLayoutId(), masterLayoutPlid);
+			
+			updatedLayoutByClassPKCount ++;
+			
+			out.println("Updated layoutByClassPK: " + layoutByClassPK.getLayoutId() + " " + layoutByClassPK.getFriendlyURL() + " draft: " + layoutByClassPK.isDraft());
+		} else {
+			out.println("Skipped layoutByClassPK: " + layoutByClassPK.getLayoutId() + " " + layoutByClassPK.getFriendlyURL() + " draft: " + layoutByClassPK.isDraft() + " already using the Master Page Template.");
+	
+			skippedLayoutByClassPKCount ++;
+		}
+	}
+}
+
+out.println("Updated layout count: " + updatedLayoutCount);
+out.println("Updated layoutByClassPK count: " + updatedLayoutByClassPKCount);
+out.println("Skipped layout count: " + skippedLayoutCount);
+out.println("Skipped layoutByClassPK count: " + skippedLayoutByClassPKCount);
