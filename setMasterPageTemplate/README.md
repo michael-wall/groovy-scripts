@@ -5,8 +5,9 @@
 - The script is intended for 2024.Q1.x and has been smoke tested with the Publications feature.
 
 ## Notes ##
-- Note that the script has not been tested in a Site with a large set of Pages. Consider updating the script to run in 'batches' if applicable.
-- Note that the 'Blank' Master Page Template usage count includes Utility Pages (2 per Page) as well as the Other Master Page Templates (2 per Template).
+- The script has been tested in a Site with up to 20 Content Pages.
+  - The script has not been tested in a Site with a large set of Content Pages. Consider updating the script to run in 'batches' if applicable.
+- The 'Blank' Master Page Template usage count includes Utility Pages (2 per Page) as well as the Other Master Page Templates (2 per Template).
 
 ## Steps to run: ##
 - Update the groupId and masterPageTemplateKey values in the script based on the target environment:
