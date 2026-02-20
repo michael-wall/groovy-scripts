@@ -1,0 +1,56 @@
+import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
+import com.liferay.portal.kernel.service.ClassNameLocalServiceUtil;
+import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.model.ClassName;
+import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.model.LayoutConstants;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.HashMap;
+
+ClassName layoutClassName = ClassNameLocalServiceUtil.fetchClassName(Layout.class.getCanonicalName());
+
+if (layoutClassName == null) {
+	out.println("ClassName for Layout not found...");
+
+	return;
+}
+
+long companyId = 20101; //Replace with the correct companyId.
+Locale locale = Locale.US; //Replace with Locale.GB for example.
+
+Map<Long, Group> groupMap = new HashMap<Long, Group>();
+
+List<Layout> layouts = LayoutLocalServiceUtil.getLayouts(companyId);
+
+for (Layout layout: layouts) {
+	if (layout.getType().equalsIgnoreCase(LayoutConstants.TYPE_CONTENT) && layout.getClassPK() == 0  && !layout.isSystem()) {
+		Layout layoutByClassPK = LayoutLocalServiceUtil.fetchLayout(layoutClassName.getClassNameId(), layout.getPlid());
+
+		if (layoutByClassPK != null) {
+			long groupId = layout.getGroupId();
+			Group group = null;
+			
+			if (groupMap.containsKey(groupId)) {
+				group = groupMap.get(groupId);
+			} else {
+				group = GroupLocalServiceUtil.fetchGroup(groupId);
+				groupMap.put(groupId, group);
+			}
+		
+			if (!layout.getTypeSettings().toLowerCase().contains("published=true") && !layoutByClassPK.getTypeSettings().toLowerCase().contains("published=true")) {
+				out.println("Site: " + group.getName(locale) + ", Content Page: " + layout.getName(locale) + " appears to have never been published.");
+				
+				continue;
+			}
+			
+			if (layoutByClassPK.getModifiedDate().getTime() > layout.getPublishDate().getTime()) {
+				out.println("Site: " + group.getName(locale) + ", Content Page: " + layout.getName(locale) + " appears to have unpublished draft changes.");
+				
+				continue;
+			}
+		}
+	}
+}
