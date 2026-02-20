@@ -17,4 +17,4 @@
 - TypeSettings published=true is set on an Edit page once it has been published.
 -- An Edit page can have unpublished draft changes and still have typeSettings published=true. As such typeSettings published=true is NOT reliable to detect unpublished draft changes.
 - If the Edit page modifiedDate is the greater than the Read page publishDate then the Edit page has unpublished draft changes.
-
+- This logic is based on the 7.2 SP8 LayoutsAdminDisplayContext.java _isShowDraftActions method.
