@@ -1,0 +1,10 @@
+
+
+		
+// Start temp code for testing...
+if (tempDelete) {
+	if (hits.getLength() > 0 && tempCount % 5 == 0) {
+		out.println("deleting: " + hits.doc(0).getUID());
+		indexer.delete(companyId, hits.doc(0).getUID());
+	}
+}
