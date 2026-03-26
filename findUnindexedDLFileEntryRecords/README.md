@@ -45,19 +45,23 @@
 	
 ## Sample output with reindexMissingSearchDocuments set to false ##
 ```
+reindexMissingSearchDocuments: false
 fileEntryCount: 1965
+...
 fileEntryId: 70660, File Exists: true, File is Indexed: true
 ...
 fileEntryId: 37706, File Exists: true, File is Indexed: false
 ...
 Skipping fileEntryId: 37245, status: in-trash, hasLock: false, isCheckedOut: false, isInHiddenFolder: false, isInTrash: true
 ...
-Summary: File Entry count: 1965, Okay count: 1937, Skipped Count: 13, File Not Exist Count: 0, File Not Indexed Count: 15, Reindex Triggered Count: 0
+Summary: File Entry count: 1965, Okay count: 1937, Skipped Count: 13, File Not Exist Count: 0, File Not Indexed Count: 15
 ```
 
-## Sample output with reindexMissingSearchDocuments set to false ##
+## Sample output with reindexMissingSearchDocuments set to true ##
 ```
+reindexMissingSearchDocuments: true
 fileEntryCount: 1965
+...
 fileEntryId: 70660, File Exists: true, File is Indexed: true, reindexTriggered: false
 ...
 fileEntryId: 37706, File Exists: true, File is Indexed: false, reindexTriggered: true

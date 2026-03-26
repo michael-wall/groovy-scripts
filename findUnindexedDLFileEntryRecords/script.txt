@@ -31,6 +31,7 @@ List fileEntries = DLFileEntryLocalServiceUtil.getGroupFileEntries(siteGroupId, 
 //int fileEntryCount = DLFileEntryLocalServiceUtil.getFileEntriesCount(siteGroupId, folderId);
 //List fileEntries = DLFileEntryLocalServiceUtil.getFileEntries(siteGroupId, folderId);
 
+out.println("reindexMissingSearchDocuments: " + reindexMissingSearchDocuments);
 out.println("fileEntryCount: " + fileEntryCount);
 
 int okayCount = 0;
@@ -102,4 +103,8 @@ for (DLFileEntry fileEntry: fileEntries) {
 }
 
 out.println("");
-out.println("Summary: File Entry count: " + fileEntryCount + ", Okay count: " + okayCount + ", Skipped Count: " + skippedCount + ", File Not Exist Count: " + fileNotExistCount + ", File Not Indexed Count: " + notIndexedCount + ", Reindex Triggered Count: " + reindexTriggeredCount);
+if (reindexMissingSearchDocuments) {
+	out.println("Summary: File Entry count: " + fileEntryCount + ", Okay count: " + okayCount + ", Skipped Count: " + skippedCount + ", File Not Exist Count: " + fileNotExistCount + ", File Not Indexed Count: " + notIndexedCount + ", Reindex Triggered Count: " + reindexTriggeredCount);
+} else {
+	out.println("Summary: File Entry count: " + fileEntryCount + ", Okay count: " + okayCount + ", Skipped Count: " + skippedCount + ", File Not Exist Count: " + fileNotExistCount + ", File Not Indexed Count: " + notIndexedCount);
+}
