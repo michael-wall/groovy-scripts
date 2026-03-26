@@ -18,7 +18,9 @@
 - For environments using Remote Live Staging, the script should be run in both the Staging and the Live environments.
 - Identify the appropriate DLFileEntry getter to use and update the script as applicable.
 - Update any configuration settings such as siteGroupId and if applicable folderId in the script based on the chosen DLFileEntryLocalServiceUtil getter and on the target environment.
-- Set reindexMissingSearchDocuments to true or false as required - see the Notes below for further details.
+- Set reindexMissingSearchDocuments to true or false as required.
+	- Setting to false will report the findings without making any changes.
+	- Setting to true will attempt to reindex DLFileEntry records if the Search index Document is missing and the file is in the File Store.
 - Login to Liferay as an Omni Administrator.
 - Navigate to Control Panel > Server Administration > Script.
 - Run the script.
@@ -40,3 +42,25 @@
 	- The file presence in the FileStore is checked to ensure it is present.
 	- An Elasticsearch search is triggered to find the corresponding Search indexed Document.
 	- When reindexMissingSearchDocuments is enabled and the file is found in the File Store and a matching Search index Document is not found, a request to reindex the file is triggered. This reindex is called asynchronously, the script output does not indicate whether the file reindex request was successful or not.
+	
+## Sample output with reindexMissingSearchDocuments set to false ##
+```
+fileEntryCount: 1965
+fileEntryId: 70660, File Exists: true, File is Indexed: true
+...
+fileEntryId: 37706, File Exists: true, File is Indexed: false
+...
+Skipping fileEntryId: 37245, status: in-trash, hasLock: false, isCheckedOut: false, isInHiddenFolder: false, isInTrash: true
+...
+Summary: File Entry count: 1965, Okay count: 1937, Skipped Count: 13, File Not Exist Count: 0, File Not Indexed Count: 15, Reindex Triggered Count: 0
+```
+
+## Sample output with reindexMissingSearchDocuments set to false ##
+```
+fileEntryCount: 1965
+fileEntryId: 70660, File Exists: true, File is Indexed: true, reindexTriggered: false
+...
+fileEntryId: 37706, File Exists: true, File is Indexed: false, reindexTriggered: true
+...
+Summary: File Entry count: 1965, Okay count: 1937, Skipped Count: 13, File Not Exist Count: 0, File Not Indexed Count: 15, Reindex Triggered Count: 15
+```

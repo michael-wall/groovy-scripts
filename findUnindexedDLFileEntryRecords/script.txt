@@ -13,7 +13,7 @@ import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import java.util.List;
 
 // Configuration start
-long siteGroupId = 20119;
+long siteGroupId = [SITE_GROUP_ID_HERE];
 //long folderId = 76525;
 boolean reindexMissingSearchDocuments = false;
 // Configuration end
