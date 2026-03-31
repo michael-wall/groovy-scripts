@@ -1,5 +1,5 @@
 ## Introduction ##
-- This script is designed to help identify DLFileEntry records whose Elasticsearch Document is missing and to trigger an Elasticsearch reindex of the DLFileEntry record.
+- This script identifies DLFileEntry records missing their Elasticsearch Document and triggers an Elasticsearch reindex for those records.
 - The script is a ‘proof of concept’ that is being provided ‘as is’, without any support coverage or warranty.
 - The script has been tested in 2025.q1 with a local environment using Elasticsearch Sidecar and a Laferay PaaS environment using a remote Elasticsearch.
 - The local testing was done with a site containing ~2,000 DLFileEntry records.

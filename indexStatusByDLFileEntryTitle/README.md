@@ -1,5 +1,5 @@
 ## Introduction ##
-- This script is designed to help check if Elasticsearch Document is missing for a Documents & Media File records Title value.
+- This script checks if an Elasticsearch Document is missing for a Documents & Media File record's Title value.
 - The script is a ‘proof of concept’ that is being provided ‘as is’, without any support coverage or warranty.
 - The script has been tested in 2025.q1 with a local environment using Elasticsearch Sidecar and a Laferay PaaS environment using a remote Elasticsearch.
 
