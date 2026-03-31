@@ -1,0 +1,46 @@
+import com.liferay.document.library.kernel.model.DLFileEntry;
+import com.liferay.portal.kernel.search.Indexer;
+import com.liferay.portal.kernel.search.SearchContext;
+import com.liferay.portal.kernel.search.Hits;
+import com.liferay.portal.kernel.search.IndexerRegistryUtil;
+import com.liferay.portal.kernel.search.IndexSearcherHelperUtil;
+import com.liferay.portal.kernel.search.generic.TermQueryImpl;
+import com.liferay.portal.kernel.search.Field;
+import com.liferay.portal.kernel.search.Document;
+
+// Configuration start
+String title = "12279_Difenableu Block rev.1";
+long companyId = 24454557631876;
+// Configuration end
+
+Indexer indexer = IndexerRegistryUtil.nullSafeGetIndexer(DLFileEntry.class);
+SearchContext searchContext = new SearchContext();
+searchContext.setEntryClassNames(DLFileEntry.class.getCanonicalName());
+
+try {
+	searchContext.setCompanyId(companyId);
+
+	TermQueryImpl query = new TermQueryImpl("title_sortable", title.toLowerCase());
+	Hits hits = IndexSearcherHelperUtil.search(searchContext, query);
+
+	if (hits.getLength() > 0) {
+		out.println("File found in Elasticsearch, hits count: " + hits.getLength());
+		
+		Document[] docs = hits.getDocs();
+		
+		for (Document doc : docs) {
+    		out.println(
+        		"FileEntryId: " + doc.get(Field.ENTRY_CLASS_PK) +
+        		", Title: " + doc.get(Field.TITLE) +
+        		", FileName: " + doc.get("fileName") +
+        		", GroupId: " + doc.get(Field.GROUP_ID) + 
+        		", FolderId: " + hits.doc(0).get(Field.FOLDER_ID));
+		}		
+	} else {
+		out.println("File not found in Elasticsearch.");
+	}
+} catch (Exception e) {
+	out.println("ERROR checking index for title=${title}: ${e.message}");
+		
+	return;
+}

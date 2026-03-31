@@ -1,11 +1,10 @@
 import com.liferay.document.library.kernel.service.DLFileEntryLocalServiceUtil;
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.store.DLStoreUtil;
+import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.search.Hits;
-import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.search.IndexerRegistryUtil;
-import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.IndexSearcherHelperUtil;
 import com.liferay.portal.kernel.search.generic.MatchQuery;
 import com.liferay.portal.kernel.search.Field;
@@ -13,7 +12,8 @@ import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import java.util.List;
 
 // Configuration start
-long siteGroupId = [SITE_GROUP_ID_HERE];
+//long siteGroupId = [SITE_GROUP_ID_HERE];
+long siteGroupId = 20118;
 //long folderId = 76525;
 boolean reindexMissingSearchDocuments = false;
 // Configuration end
@@ -35,24 +35,28 @@ out.println("reindexMissingSearchDocuments: " + reindexMissingSearchDocuments);
 out.println("fileEntryCount: " + fileEntryCount);
 
 int okayCount = 0;
+int errorCount = 0;
 int skippedCount = 0;
 int fileNotExistCount = 0;
-int notIndexedCount = 0;
+int fileNotIndexedCount = 0;
 int reindexTriggeredCount = 0;
 
 for (DLFileEntry fileEntry: fileEntries) {
+	Hits hits = null;
 	long companyId = fileEntry.getCompanyId();
 	long repositoryId = fileEntry.getDataRepositoryId();
 	String name = fileEntry.getName();
 	
 	int status = fileEntry.getStatus();
+	
 	boolean hasLock = fileEntry.hasLock();
 	boolean isCheckedOut = fileEntry.isCheckedOut();
 	boolean isInHiddenFolder = fileEntry.isInHiddenFolder();
 	boolean isInTrash = fileEntry.isInTrash();
 	
+	boolean isErrorOccurred = false;
 	boolean isFileExists = false;
-	boolean isIndexed = false;
+	boolean isFileIndexed = false;
 	boolean reindexTriggered = false;
 		
 	if (status != WorkflowConstants.STATUS_APPROVED || hasLock || isCheckedOut || isInHiddenFolder || isInTrash) {
@@ -69,42 +73,68 @@ for (DLFileEntry fileEntry: fileEntries) {
 		isFileExists = DLStoreUtil.hasFile(companyId, repositoryId, name, versionLabel);
     } catch (Exception e) {
 		out.println("ERROR checking file store for fileEntryId=${fileEntry.getFileEntryId()}: ${e.message}");
+		
+		isErrorOccurred = true;
+		errorCount ++;
+		
+		continue;
     }
-	
-	if (!isFileExists) fileNotExistCount ++;
 	
     try {
 		searchContext.setCompanyId(companyId);
 		searchContext.setGroupIds([fileEntry.getGroupId()] as long[]);
 
 		MatchQuery query = new MatchQuery(Field.ENTRY_CLASS_PK, fileEntry.getFileEntryId() + "");
-		Hits hits = IndexSearcherHelperUtil.search(searchContext, query);
+		hits = IndexSearcherHelperUtil.search(searchContext, query);
 
-		if (hits.getLength() > 0) { isIndexed = true; }
-		
-		if (!isIndexed) notIndexedCount ++;
-		if (isFileExists && isIndexed) okayCount ++;
+		if (hits.getLength() > 0) { isFileIndexed = true; }
 
-		if (isFileExists && reindexMissingSearchDocuments && hits.getLength() == 0) {
+		if (isFileExists && !isFileIndexed && reindexMissingSearchDocuments) {
 			indexer.reindex(DLFileEntry.class.getCanonicalName(), fileEntry.getFileEntryId());
 			
 			reindexTriggered = true;
-			reindexTriggeredCount ++;
 		}
 	} catch (Exception e) {
 		out.println("ERROR checking index for fileEntryId=${fileEntry.getFileEntryId()}: ${e.message}");
+		
+		isErrorOccurred = true;
+		errorCount ++;
+		
+		continue;
 	}
 	
-	if (reindexMissingSearchDocuments) {
-		out.println("fileEntryId: " + fileEntry.getFileEntryId() + ", File Exists: " + isFileExists + ", File is Indexed: " + isIndexed + ", reindexTriggered: " + reindexTriggered);
-	} else {
-		out.println("fileEntryId: " + fileEntry.getFileEntryId() + ", File Exists: " + isFileExists + ", File is Indexed: " + isIndexed);
+	if (!isFileExists) fileNotExistCount ++;
+	if (!isFileIndexed) fileNotIndexedCount ++;
+	if (isFileExists && isFileIndexed) okayCount ++;
+	if (reindexTriggered) reindexTriggeredCount ++;
+	
+	String entrySummary = "fileEntryId: " + fileEntry.getFileEntryId();
+	
+	if (isFileIndexed) {
+		entrySummary += ", Title: " + hits.doc(0).get(Field.TITLE);
+		entrySummary += ", FileName: " + hits.doc(0).get("fileName");
+		entrySummary += ", GroupId: " + hits.doc(0).get(Field.GROUP_ID);
+		entrySummary += ", FolderId: " + hits.doc(0).get(Field.FOLDER_ID); 
 	}
+	
+	entrySummary += ", File Exists: " + isFileExists; 
+	entrySummary += ", File is Indexed: " + isFileIndexed;	
+
+	if (reindexMissingSearchDocuments) {
+		entrySummary += ", Reindex Triggered: " + reindexTriggered;
+	}
+	
+	out.println(entrySummary);
 }
 
 out.println("");
+out.println("Summary");
+out.println("File Entry Count: " + fileEntryCount);
+out.println("Okay Count: " + okayCount);
+out.println("Error Count: " + errorCount);
+out.println("Skipped Count: " + skippedCount);
+out.println("File Not Exist Count: " + fileNotExistCount);
+out.println("File Not Indexed Count: " + fileNotIndexedCount);
 if (reindexMissingSearchDocuments) {
-	out.println("Summary: File Entry count: " + fileEntryCount + ", Okay count: " + okayCount + ", Skipped Count: " + skippedCount + ", File Not Exist Count: " + fileNotExistCount + ", File Not Indexed Count: " + notIndexedCount + ", Reindex Triggered Count: " + reindexTriggeredCount);
-} else {
-	out.println("Summary: File Entry count: " + fileEntryCount + ", Okay count: " + okayCount + ", Skipped Count: " + skippedCount + ", File Not Exist Count: " + fileNotExistCount + ", File Not Indexed Count: " + notIndexedCount);
+	out.println("Reindex Triggered Count: " + reindexTriggeredCount);
 }

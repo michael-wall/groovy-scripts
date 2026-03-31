@@ -1,0 +1,47 @@
+import com.liferay.document.library.kernel.service.DLFileEntryLocalServiceUtil;
+import com.liferay.document.library.kernel.model.DLFileEntry;
+import com.liferay.document.library.kernel.store.DLStoreUtil;
+import com.liferay.portal.kernel.search.SearchContext;
+import com.liferay.portal.kernel.search.Indexer;
+import com.liferay.portal.kernel.search.Hits;
+import com.liferay.portal.kernel.search.IndexerRegistryUtil;
+import com.liferay.portal.kernel.search.IndexSearcherHelperUtil;
+import com.liferay.portal.kernel.search.generic.MatchQuery;
+import com.liferay.portal.kernel.search.Field;
+
+// Configuration start
+long fileEntryId = 33867;
+// Configuration end
+
+Indexer indexer = IndexerRegistryUtil.nullSafeGetIndexer(DLFileEntry.class);
+SearchContext searchContext = new SearchContext();
+searchContext.setEntryClassNames(DLFileEntry.class.getCanonicalName());
+
+DLFileEntry fileEntry = DLFileEntryLocalServiceUtil.fetchDLFileEntry(fileEntryId);
+
+if (fileEntry == null) {
+	out.println("FileEntryId: " + fileEntryId + " not found.");
+	
+	return;
+}
+
+long companyId = fileEntry.getCompanyId();
+long repositoryId = fileEntry.getDataRepositoryId();
+String name = fileEntry.getName();
+	
+try {
+	searchContext.setCompanyId(companyId);
+	searchContext.setGroupIds([fileEntry.getGroupId()] as long[]);
+
+	MatchQuery query = new MatchQuery(Field.ENTRY_CLASS_PK, fileEntry.getFileEntryId() + "");
+	Hits hits = IndexSearcherHelperUtil.search(searchContext, query);
+
+	if (hits.getLength() > 0) { 
+		out.println("deleting: " + hits.doc(0).getUID());
+		indexer.delete(companyId, hits.doc(0).getUID());	
+	}
+} catch (Exception e) {
+	out.println("ERROR checking index for fileEntryId=${fileEntry.getFileEntryId()}: ${e.message}");
+		
+	return;
+}

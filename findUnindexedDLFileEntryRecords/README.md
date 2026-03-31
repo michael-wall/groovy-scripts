@@ -17,7 +17,7 @@
 ## Steps to run ##
 - For environments using Remote Live Staging, the script should be run in both the Staging and the Live environments.
 - Identify the appropriate DLFileEntry getter to use and update the script as applicable.
-- Update any configuration settings such as siteGroupId and if applicable folderId in the script based on the chosen DLFileEntryLocalServiceUtil getter and on the target environment.
+	- Update any configuration settings such as siteGroupId and if applicable folderId in the script based on the chosen DLFileEntryLocalServiceUtil getter and on the target environment.
 - Set reindexMissingSearchDocuments to true or false as required.
 	- Setting to false will report the findings without making any changes.
 	- Setting to true will attempt to reindex DLFileEntry records if the Search index Document is missing and the file is in the File Store.
@@ -25,6 +25,9 @@
 - Navigate to Control Panel > Server Administration > Script.
 - Run the script.
 - Review the scripts onscreen output to confirm it ran successfully.
+
+## Script versus full Elasticsearch Reindex ##
+- If a large volume of Elasticsearch documents are found to be missing when running with reindexMissingSearchDocuments as false then consider doing a full Elasticsearch Reindex rather than running this script with reindexMissingSearchDocuments set to true. 
 
 ## Performance considerations ##
 - Consider running out of hours for production environments.
@@ -48,13 +51,17 @@
 reindexMissingSearchDocuments: false
 fileEntryCount: 1965
 ...
-fileEntryId: 70660, File Exists: true, File is Indexed: true
-...
-fileEntryId: 37706, File Exists: true, File is Indexed: false
+fileEntryId: 70660, Title: sia_summary_forum-msc__comments_rev07-2010_en, FileName: sia_summary_forum-msc__comments_rev07-2010_en.xls, GroupId: 20118, FolderId: 68354, File Exists: true, File is Indexed: true
 ...
 Skipping fileEntryId: 37245, status: in-trash, hasLock: false, isCheckedOut: false, isInHiddenFolder: false, isInTrash: true
 ...
-Summary: File Entry count: 1965, Okay count: 1937, Skipped Count: 13, File Not Exist Count: 0, File Not Indexed Count: 15
+Summary
+File Entry count: 1965
+Error Count: 0
+Okay Count: 1937
+Skipped Count: 13
+File Not Exist Count: 0
+File Not Indexed Count: 15
 ```
 
 ## Sample output with reindexMissingSearchDocuments set to true ##
@@ -62,11 +69,16 @@ Summary: File Entry count: 1965, Okay count: 1937, Skipped Count: 13, File Not E
 reindexMissingSearchDocuments: true
 fileEntryCount: 1965
 ...
-fileEntryId: 70660, File Exists: true, File is Indexed: true, reindexTriggered: false
-...
-fileEntryId: 37706, File Exists: true, File is Indexed: false, reindexTriggered: true
+fileEntryId: 70660, Title: sia_summary_forum-msc__comments_rev07-2010_en, FileName: sia_summary_forum-msc__comments_rev07-2010_en.xls, GroupId: 20118, FolderId: 68354, File Exists: true, File is Indexed: true, Reindex Triggered: false
 ...
 Skipping fileEntryId: 37245, status: in-trash, hasLock: false, isCheckedOut: false, isInHiddenFolder: false, isInTrash: true
 ...
-Summary: File Entry count: 1965, Okay count: 1937, Skipped Count: 13, File Not Exist Count: 0, File Not Indexed Count: 15, Reindex Triggered Count: 15
+Summary
+File Entry count: 1965
+Error Count: 0
+Okay Count: 1937
+Skipped Count: 13
+File Not Exist Count: 0
+File Not Indexed Count: 15
+Reindex Triggered Count: 15
 ```

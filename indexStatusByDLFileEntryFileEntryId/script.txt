@@ -1,0 +1,102 @@
+import com.liferay.document.library.kernel.service.DLFileEntryLocalServiceUtil;
+import com.liferay.document.library.kernel.model.DLFileEntry;
+import com.liferay.document.library.kernel.store.DLStoreUtil;
+import com.liferay.portal.kernel.search.SearchContext;
+import com.liferay.portal.kernel.search.Hits;
+import com.liferay.portal.kernel.search.Indexer;
+import com.liferay.portal.kernel.search.IndexerRegistryUtil;
+import com.liferay.portal.kernel.search.IndexSearcherHelperUtil;
+import com.liferay.portal.kernel.search.generic.MatchQuery;
+import com.liferay.portal.kernel.search.Field;
+import com.liferay.portal.kernel.workflow.WorkflowConstants;
+
+// Configuration start
+long fileEntryId = 32614;
+boolean reindexMissingSearchDocuments = false;
+// Configuration end
+
+Indexer indexer = IndexerRegistryUtil.nullSafeGetIndexer(DLFileEntry.class);
+SearchContext searchContext = new SearchContext();
+searchContext.setEntryClassNames(DLFileEntry.class.getCanonicalName());
+
+out.println("reindexMissingSearchDocuments: " + reindexMissingSearchDocuments);
+
+DLFileEntry fileEntry = DLFileEntryLocalServiceUtil.fetchDLFileEntry(fileEntryId);
+
+if (fileEntry == null) {
+	out.println("FileEntryId: " + fileEntryId + " not found.");
+	
+	return;
+}
+
+long companyId = fileEntry.getCompanyId();
+long repositoryId = fileEntry.getDataRepositoryId();
+String name = fileEntry.getName();
+	
+int status = fileEntry.getStatus();
+	
+boolean hasLock = fileEntry.hasLock();
+boolean isCheckedOut = fileEntry.isCheckedOut();
+boolean isInHiddenFolder = fileEntry.isInHiddenFolder();
+boolean isInTrash = fileEntry.isInTrash();
+	
+boolean isFileExists = false;
+boolean isFileIndexed = false;
+boolean reindexTriggered = false;
+		
+if (status != WorkflowConstants.STATUS_APPROVED || hasLock || isCheckedOut || isInHiddenFolder || isInTrash) {	
+	out.println("Skipping fileEntryId: " + fileEntry.getFileEntryId() + ", status: " + WorkflowConstants.getStatusLabel(status) + ", hasLock: " + hasLock + ", isCheckedOut: " + isCheckedOut + ", isInHiddenFolder: " + isInHiddenFolder + ", isInTrash: " + isInTrash);
+	
+	return;
+}
+	
+String versionLabel = fileEntry.getLatestFileVersion(true).getStoreFileName();
+	
+try {
+	isFileExists = DLStoreUtil.hasFile(companyId, repositoryId, name, versionLabel);
+} catch (Exception e) {
+	out.println("ERROR checking file store for fileEntryId=${fileEntry.getFileEntryId()}: ${e.message}");
+	
+	return;
+}
+
+Hits hits = null;
+	
+try {
+	searchContext.setCompanyId(companyId);
+	searchContext.setGroupIds([fileEntry.getGroupId()] as long[]);
+
+	MatchQuery query = new MatchQuery(Field.ENTRY_CLASS_PK, fileEntry.getFileEntryId() + "");
+	hits = IndexSearcherHelperUtil.search(searchContext, query);
+
+	if (hits.getLength() > 0) { isFileIndexed = true; }
+
+	if (isFileExists && !isFileIndexed && reindexMissingSearchDocuments) {
+		indexer.reindex(DLFileEntry.class.getCanonicalName(), fileEntry.getFileEntryId());
+			
+		reindexTriggered = true;
+	}
+} catch (Exception e) {
+	out.println("ERROR checking index for fileEntryId=${fileEntry.getFileEntryId()}: ${e.message}");
+		
+	return;
+}
+
+
+String entrySummary = "fileEntryId: " + fileEntry.getFileEntryId();
+
+if (isFileIndexed) {
+	entrySummary += ", Title: " + hits.doc(0).get(Field.TITLE);
+	entrySummary += ", FileName: " + hits.doc(0).get("fileName");
+	entrySummary += ", GroupId: " + hits.doc(0).get(Field.GROUP_ID);
+	entrySummary += ", FolderId: " + hits.doc(0).get(Field.FOLDER_ID); 
+}
+
+entrySummary += ", File Exists: " + isFileExists; 
+entrySummary += ", File is Indexed: " + isFileIndexed;
+		
+if (reindexMissingSearchDocuments) {
+	entrySummary += ", Reindex Triggered: " + reindexTriggered;
+}		
+
+out.println(entrySummary);
